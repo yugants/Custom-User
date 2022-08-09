@@ -46,31 +46,28 @@ class TiketView(APIView):
         '''Create tiket function'''
 
         user = User.objects.get(username=request.user)
-        #print(user)
+
         if user.role == 'admin' and User.objects.get(username=request.data['assignedTo']):
-            #print('hi')
-            # print(request.data)
-            # return Response('Hi')
             serializer = TiketSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            #print(serializer.data)
-            tiket = Tiket.objects.get(title=serializer.data['title'])
+            tiket = Tiket.objects.get(title= serializer.data['title'])
             return Response({'Ticket ID':tiket.id, 'status':status.HTTP_201_CREATED})
-
 
         else:
             return Response("Only admins can raise tiket!")
 
 
-# class ManageUserView(generics.RetrieveUpdateAPIView):
-#     '''Manage the authenticated user.'''
+class GetTokenView(APIView):
+    '''Get token for existing users.'''
 
-#     serializer_class = UserSerializer
-#     authentication_classes = [authentication.TokenAuthentication]
-#     permission_classes = [permissions.IsAuthenticated]
+    def post(self, request):
+        """Find user in db and return token"""
 
-#     def get_object(self):
-#         """Retrieve and return the authenticated user."""
+        try:
+            user = User.objects.get(username=request.data['username'])
+            token = Token.objects.get(user=user)
+            return Response({'Token':token.key})
 
-#         return self.request.user
+        except User.DoesNotExist:
+            return Response("Username is Invalid")
