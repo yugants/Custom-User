@@ -1,12 +1,12 @@
 '''User model'''
 
 from django.db import models
-from django.conf import settings
 from django.contrib.auth.models import(
     AbstractBaseUser,
     BaseUserManager,
     PermissionsMixin,
 )
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
@@ -40,11 +40,21 @@ class User(AbstractBaseUser, PermissionsMixin):
     '''User in the system'''
 
     username = models.CharField(max_length=100, unique=True, null=False)
-    password = models.CharField(max_length=100, null=True, blank=True)
+    password = models.CharField(max_length=100, null=False)
     role = models.CharField(max_length=30)
+    is_staff = False
+    is_active = True
 
     objects = UserManager()
 
     USERNAME_FIELD = 'username'
 
+class Tiket(models.Model):
+    '''ticket table'''
 
+    id = models.AutoField(primary_key=True)
+    title = models.CharField(max_length=100, unique=True)
+    status = models.CharField(max_length=50, default='open')
+    priority = models.CharField(max_length=50, default='low')
+    assignedTo = models.CharField(max_length=100)
+    createdAt = models.TimeField(default=timezone.now)

@@ -3,7 +3,7 @@
 from django.contrib.auth import (
     get_user_model,
 )
-from .models import User
+from .models import User, Tiket
 from django.utils.translation import gettext as _
 from rest_framework import serializers
 
@@ -28,27 +28,12 @@ class UserSerializer(serializers.ModelSerializer):
         user = super().update(instance, validated_data)
         if password:
             user.set_password(password)
-            user.save()
-
+        user.save()
         return user
 
 
-# class AuthTokenSerailizer(serializers.Serializer):
-#     '''Serializer for the user auth token.'''
+class TiketSerializer(serializers.ModelSerializer):
 
-#     username = serializers.CharField()
-#     role = serializers.CharField()
-
-#     def validate(self, attr):
-#         '''Validate and authenticate the user.'''
-
-#         username = attr.get('username')
-
-#         user = User.objects.get(username=username)
-
-#         if not user:
-#             msg = _('Unable to authenticate with username.')
-#             raise serializers.ValidationError(msg, code='aunthorization')
-
-#         attr['user'] = user
-#         return attr
+    class Meta:
+        model = Tiket
+        fields = ['title','assignedTo']
