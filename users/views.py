@@ -2,6 +2,7 @@
 Views for the user API
 '''
 
+from turtle import title
 from .models import User, Tiket
 from users.serializers import (
     UserSerializer,
@@ -71,3 +72,28 @@ class GetTokenView(APIView):
 
         except User.DoesNotExist:
             return Response("Username is Invalid")
+
+class TiketFilterView(APIView):
+    '''Tikets filter methods'''
+
+    def get(self, request):
+        '''Return tickets according to parameters'''
+
+        if self.request.query_params.get('status', None):
+                print('status')
+                tikets = Tiket.objects.filter(status = request.query_params['status']).values()
+                tiketserializer =  TiketSerializer(tikets, many=True)
+
+        elif self.request.query_params.get('title', None):
+                tikets = Tiket.objects.get(title = request.query_params['title'])
+                tiketserializer =  TiketSerializer(tikets)
+
+        elif self.request.query_params.get('priority', None):
+                tikets = Tiket.objects.filter(priority = request.query_params['priority'])
+                tiketserializer =  TiketSerializer(tikets, many=True)
+
+        else:
+                tiket = Tiket.objects.all()
+                tiketserializer = TiketSerializer(tiket, many=True)
+
+        return Response({'Tickets':tiketserializer.data})
