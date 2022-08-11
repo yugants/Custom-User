@@ -2,7 +2,6 @@
 Views for the user API
 '''
 
-from turtle import title
 from .models import User, Tiket
 from users.serializers import (
     UserSerializer,
@@ -73,15 +72,19 @@ class GetTokenView(APIView):
         except User.DoesNotExist:
             return Response("Username is Invalid")
 
+
 class TiketFilterView(APIView):
     '''Tikets filter methods'''
+
+
+    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [authentication.TokenAuthentication]
 
     def get(self, request):
         '''Return tickets according to parameters'''
 
         if self.request.query_params.get('status', None):
-                print('status')
-                tikets = Tiket.objects.filter(status = request.query_params['status']).values()
+                tikets = Tiket.objects.filter(status = request.query_params['status'])
                 tiketserializer =  TiketSerializer(tikets, many=True)
 
         elif self.request.query_params.get('title', None):
@@ -97,3 +100,56 @@ class TiketFilterView(APIView):
                 tiketserializer = TiketSerializer(tiket, many=True)
 
         return Response({'Tickets':tiketserializer.data})
+
+
+class CloseTiketView(APIView):
+    '''Ticket Closing endpoint'''
+
+    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [authentication.TokenAuthentication]
+
+    def post(self, request):
+        '''Only admins and ticket owner
+        can close the ticket'''
+
+        try:
+            id = self.request.data['id']
+            tiket = Tiket.objects.get(id = id)
+
+
+        except Tiket.DoesNotExist:
+            return Response('Incorrect ticket id.')
+
+        user = User.objects.get(username=request.user)
+
+        if user.role == 'admin' or user.username == tiket.assignedTo:
+            tiket.status = 'close'
+            tiket.save()
+            print('tiket: ',Tiket.objects.get(id=id))
+            return Response({"Ticket Closed":tiket.status})
+
+        else:
+            return Response("Only and admins and ticket owners can close ticket.")
+
+
+class TiketDeleteView(APIView):
+    '''To delete tickets'''
+
+    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [authentication.TokenAuthentication]
+
+    def post(self, request):
+        '''Only admins can delete.'''
+
+        try:
+            tiket = Tiket.objects.get(id=request.data['id'])
+
+        except Tiket.DoesNotExist:
+            return Response('Incorrect ticket id.')
+
+        if request.user.role == "admin" and tiket:
+            tiket.delete()
+            return Response('deleted successfully')
+
+        else:
+            return Response("Invalid Request")
