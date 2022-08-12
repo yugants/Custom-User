@@ -76,10 +76,6 @@ class GetTokenView(APIView):
 class TiketFilterView(APIView):
     '''Tikets filter methods'''
 
-
-    permission_classes = [permissions.IsAuthenticated]
-    authentication_classes = [authentication.TokenAuthentication]
-
     def get(self, request):
         '''Return tickets according to parameters'''
 
@@ -92,7 +88,7 @@ class TiketFilterView(APIView):
                 tiketserializer =  TiketSerializer(tikets)
 
         elif self.request.query_params.get('priority', None):
-                tikets = Tiket.objects.filter(priority = request.query_params['priority'])
+                tikets = Tiket.objects.filter(priority = request.query_params['priority']).order_by('priority')
                 tiketserializer =  TiketSerializer(tikets, many=True)
 
         else:
@@ -120,13 +116,41 @@ class CloseTiketView(APIView):
         except Tiket.DoesNotExist:
             return Response('Incorrect ticket id.')
 
+        '''Only close ticket if not higher priority
+        ticket is pending.'''
+
         user = User.objects.get(username=request.user)
 
         if user.role == 'admin' or user.username == tiket.assignedTo:
-            tiket.status = 'close'
-            tiket.save()
-            print('tiket: ',Tiket.objects.get(id=id))
-            return Response({"Ticket Closed":tiket.status})
+
+            tikets = Tiket.objects.filter(assignedTo=tiket.assignedTo)
+
+            if tiket.priority =='high':
+                    tiket.status = 'close'
+                    tiket.save()
+                    return Response({"Ticket Closed High priority":tiket.status})
+
+            for i in tikets:
+                if i.id == id:
+                    continue
+
+                elif i.priority == 'high' and i.status == 'open':
+                    return Response("Cannot close, another tiket with \
+                    high priority pending")
+
+                elif i.priority == 'medium' and tiket.priority =='low' and i.status == 'open':
+                    return Response("Cannot close, another tiket with \
+                    high priority pending")
+
+                elif tiket.priority == 'medium':
+                    tiket.status = 'close'
+                    tiket.save()
+                    return Response({"Ticket Closed Medium priority":tiket.status})
+
+                elif tiket.priority == 'low':
+                    tiket.status = 'close'
+                    tiket.save()
+                    return Response({"Ticket Closed Low priority":tiket.status})
 
         else:
             return Response("Only and admins and ticket owners can close ticket.")

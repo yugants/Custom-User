@@ -36,4 +36,4 @@ class TiketSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tiket
-        fields = ['title','assignedTo','status']
+        fields = ['title','assignedTo','status','priority']

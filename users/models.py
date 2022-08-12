@@ -49,6 +49,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'username'
 
+
 class Tiket(models.Model):
     '''ticket table'''
 
